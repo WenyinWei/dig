@@ -44,11 +44,7 @@ def get_EAST_EFIT_BR_BZ_BPhi(shotnum:int, tpoints:list=None):
     """ Return the list of BR, BZ, Bt on the specified tpoints. If tpoints unspecified, all BR, BZ, Bt on time points given by efit would be calculated. 
     Note the first index is for R while the second one is for R, 
     BR = BRs[0]
-    BR[Z_index,R_index]
-    In a common phi=0 cross-section
-        Z_index = 0 (resp. -1) denotes the bottom line (resp. top line),
-        R_index = 0 (resp. -1) denotes the left line (resp. right line).
-    This is not a smart index choice, but to preserve the index consistency with matlab code. Transpose the matrix by BR.T as you wish.
+    BR[ R_index, Z_index ]
 
     Args:
         shotnum (int): [description]
@@ -97,8 +93,8 @@ def get_EAST_EFIT_BR_BZ_BPhi(shotnum:int, tpoints:list=None):
             BZ = -dpsidR/RR 
             BR = dpsidZ/RR 
 
-            BRs.append(BR)
-            BZs.append(BZ)
+            BRs.append(BR.T)
+            BZs.append(BZ.T)
     else: # does nto use time given by efit directly
         for tpoint in tpoints:
             I = np.searchsorted(tefit, tpoint, side='right')
@@ -127,8 +123,8 @@ def get_EAST_EFIT_BR_BZ_BPhi(shotnum:int, tpoints:list=None):
             BZ = -dpsidR/RR 
             BR = dpsidZ/RR 
 
-            BRs.append(BR)
-            BZs.append(BZ)
+            BRs.append(BR.T)
+            BZs.append(BZ.T)
 
     mds_conn.closeTree("efit_east", shotnum)
 
@@ -145,7 +141,7 @@ def get_EAST_EFIT_BR_BZ_BPhi(shotnum:int, tpoints:list=None):
     for _ in tpoints: # considered as constant now
         Bt = np.ones_like(BR)
         Bt = R0 * Bt0 * Bt / R[None,:]
-        Bts.append(Bt)
+        Bts.append(Bt.T)
 
     mds_conn.closeTree("east_1", shotnum)
     mds_conn.closeAllTrees()
@@ -156,11 +152,8 @@ def get_EAST_EFIT_psi(shotnum:int, tpoints:float=None):
     """psi distribution interpolated on the specified time points.
 
     psi = psis[0]
-    psi[Z_index,R_index]
-    In a common phi=0 cross-section
-        Z_index = 0 (or -1) denotes the bottom line (or top line),
-        R_index = 0 (or -1) denotes the left line (or right line).
-    This is not a smart index choice, but to preserve the index consistency with matlab code. Transpose the matrix by BR.T as you wish.
+    psi[ R_index, Z_index ]
+    
 
     Args:
         shotnum (int): [description]
@@ -198,7 +191,7 @@ def get_EAST_EFIT_psi(shotnum:int, tpoints:float=None):
             psi_2 = psi[:,:,I+1].T
             psi_ = psi_1 * ((tslice_2 - tpoint) / trange) + psi_2 *  ((tpoint - tslice_1) / trange) # simple linear weighting
 
-            psis.append(psi_)
+            psis.append(psi_.T)
 
     R = mds_conn.get("\\R").data().T
     Z = mds_conn.get("\\Z").data().T
