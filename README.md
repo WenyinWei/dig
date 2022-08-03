@@ -8,7 +8,9 @@
 
 ## Install
 
-Prequisite: [MDSplus](https://mdsplus.org/index.php?title=Downloads&open=1769734509572583850001&page=Software%2FDownloads)
+Prequisite: 
+- [MDSplus](https://mdsplus.org/index.php?title=Downloads&open=1769734509572583850001&page=Software%2FDownloads)
+- We do not support Anaconda. Use [virtualenv](https://wenyin.xyz/archives/python-virtual-env) instead if you don't want to mess up your system built-in python environment.
 
 ```bash
 # for clients
@@ -19,6 +21,17 @@ cd /to-somewhere-you-want-to-clone-the-repo
 git clone https://github.com/WenyinWei/dig.git
 cd dig # (not dig/dig)
 pip install -e . # "-e" means editable
+```
+
+Add `mhd_settings.ini` (you can find a template at this repo) to you application data path, *e.g.*
+- `C:\Users\<your-user-name>\mhd\mhd_settings.ini` for Windows,
+- `/home/<your-user-name>/.mhd/mhd_settings.ini` for Debian systems like Ubuntu.
+
+Parameters are stored in this *.ini* file and you need to check and modify some of them. Having configuring the *.ini* file in a right way, the following import should be successful.
+
+
+```python
+import dig 
 ```
 
 ## Use Python in Matlab
