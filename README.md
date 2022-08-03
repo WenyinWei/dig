@@ -8,10 +8,16 @@
 
 ## Install
 
-要安装 dig 到 python 环境中，需要按以下命令
+Prequisite: [MDSplus](https://mdsplus.org/index.php?title=Downloads&open=1769734509572583850001&page=Software%2FDownloads)
 
 ```bash
-cd /your-path-to/dig # (not dig/dig)
+# for clients
+pip install dig-mhd 
+
+# for developers
+cd /to-somewhere-you-want-to-clone-the-repo
+git clone https://github.com/WenyinWei/dig.git
+cd dig # (not dig/dig)
 pip install -e . # "-e" means editable
 ```
 

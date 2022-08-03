@@ -4,18 +4,19 @@ with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="dig",
+    name="dig-mhd",
     version="0.0.1",
-    author="Wenyin Wei, Shaocheng Liu, Liang Liao",
+    author="Wenyin Wei",
     author_email="wenyin.wei.ww@gmail.com",
-    description="Dig, short for diagnostic, is used in EAST fusion machine to help process diagnostic data. For the time being, dig supports some general functionality like drawing the overview plot of experiment parameters.  ",
+    description="Dig, short for diagnostic, is used to help acquire diagnostic data from MDSplus. ",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/WenyinWei/dig",
     packages=setuptools.find_packages(),
     classifiers=[
+        "Development Status :: 2 - Pre-Alpha",
         "Programming Language :: Python :: 3",
-        "License :: OSI Approved :: MIT License",
+        "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
         "Operating System :: OS Independent",
     ],
     python_requires='>=3.8',
