@@ -162,7 +162,7 @@ def get_EAST_EFIT_psi(shotnum:int, tpoints:float=None):
     Returns:
         R: on which R grid is the BR, BZ, Bt
         Z: on which Z grid is the BR, BZ, Bt
-        psis (list of np.ndarray): a list of psi[Z_ind, R_ind] distribution, the time of which are corresponding to the specified tpoints (if not specified, all is given)
+        psis (list of np.ndarray): a list of psi[R_ind, Z_ind] distribution, the time of which are corresponding to the specified tpoints (if not specified, all is given)
     """
     if tpoints is None:
         whether_use_time_of_efit = True
