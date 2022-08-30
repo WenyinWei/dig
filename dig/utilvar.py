@@ -13,11 +13,11 @@ def rcentr_bcentr_to_Bt(rcentr, bcentr, R, Z):
         Z (_type_): _description_
 
     Returns:
-        Bt (np.ndarray): 2D B toroidal field in [iZ, iR]
+        Bt (np.ndarray): 2D B toroidal field in [iR, iZ]
     """
     Bt = np.ones( (R.size, Z.size) )
     Bt = rcentr * bcentr * Bt / R[None,:]
-    return Bt
+    return Bt.T
 
 def R_Z_psirz_to_BR_BZ(R, Z, psirz):
     """input R, Z are 1D mesh, psirz[iZ,iR] is psi 2D distribution
@@ -28,7 +28,7 @@ def R_Z_psirz_to_BR_BZ(R, Z, psirz):
         psirz (_type_): _description_
 
     Returns:
-        BR, BZ (np.ndarray): 2D mesh [iZ, iR] in matlab index style 
+        BR, BZ (np.ndarray): 2D mesh [iR, iZ] in matlab index style 
     """
     psirz_ = psirz.T
     from numpy import gradient
@@ -37,7 +37,7 @@ def R_Z_psirz_to_BR_BZ(R, Z, psirz):
     RR = np.matmul( np.ones_like(Z)[:,None], R[None,:] )
     BZ = -dpsidR/RR 
     BR = dpsidZ/RR 
-    return BR, BZ
+    return BR.T, BZ.T
         
 
 def get_EAST_EFIT_BR_BZ_BPhi(shotnum:int, tpoints:list=None):
