@@ -97,7 +97,7 @@ def get_EAST_EFIT_BR_BZ_BPhi(shotnum:int, tpoints:list=None):
             BZs.append(BZ.T)
     else: # does nto use time given by efit directly
         for tpoint in tpoints:
-            I = np.searchsorted(tefit, tpoint, side='right')
+            I = np.searchsorted(tefit, tpoint, ) - 1 
             tslice_1 = tefit[I] 
             tslice_2 = tefit[I+1] 
             trange = tslice_2 - tslice_1
@@ -182,7 +182,7 @@ def get_EAST_EFIT_psi(shotnum:int, tpoints:float=None):
             psis.append(psi_)
     else:
         for tpoint in tpoints:
-            I = np.searchsorted(tefit, tpoint, side='right')
+            I = np.searchsorted(tefit, tpoint, ) - 1
             tslice_1 = tefit[I] 
             tslice_2 = tefit[I+1] 
             trange = tslice_2 - tslice_1
