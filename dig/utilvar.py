@@ -84,16 +84,17 @@ def get_EAST_EFIT_BR_BZ_BPhi(shotnum:int, tpoints:list=None):
     if whether_use_time_of_efit:
         tpoints = tefit
         for i in range( len(tpoints) ):
-            psi_ = psi[:,:,i].T
+            psi_ = psi[:,:,i].T # psi_ in [iZ, iR], psi in [iR, iZ, iT]
 
             from numpy import gradient
-            dpsidR, dpsidZ = gradient(psi_.T, R, Z)
+            # Eq. (3) W Zwingmann et al Equilibrium analysis of tokamak discharges with anisotropic pressure Plasma Phys. Control. Fusion (2001) vol. 43 1441
+            dpsidR, dpsidZ = gradient(psi_.T, R, Z) # dpsidR, dpsidZ in [iR, iZ]
             dpsidR, dpsidZ = dpsidR.T, dpsidZ.T 
             RR = np.matmul( np.ones_like(Z)[:,None], R[None,:] )
-            BZ = -dpsidR/RR 
+            BZ = -dpsidR/RR # [iZ, iR]
             BR = dpsidZ/RR 
 
-            BRs.append(BR.T)
+            BRs.append(BR.T) # BR.T in [iR, iZ]
             BZs.append(BZ.T)
     else: # does nto use time given by efit directly
         for tpoint in tpoints:
