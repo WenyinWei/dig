@@ -3,6 +3,13 @@ import numpy as np
 import MDSplus
 from dig import MDSplus_server_IP
 
+def time_linear_weighting(tdataseries, dataseries, tpoint):
+    I = np.searchsorted(tdataseries, tpoint, ) - 1
+    tslice_1 = tdataseries[I] 
+    tslice_2 = tdataseries[I+1] 
+    trange = tslice_2 - tslice_1
+    return dataseries[I] * ((tslice_2 - tpoint) / trange) + dataseries[I+1] *  ((tpoint - tslice_1) / trange) # simple linear weighting
+
 def rcentr_bcentr_to_Bt(rcentr, bcentr, R, Z):
     """from efit rcentr, bcentr and R,Z mesh to Bt
 
@@ -202,3 +209,57 @@ def get_EAST_EFIT_psi(shotnum:int, tpoints:float=None):
 
     return R, Z, tpoints, psis
 
+
+def get_EAST_tRMP_IRMP(shotnum:int, mds_treedict=None):
+    """To get EAST RMP (resonant magnetic perturbation) coil time and current sequences.
+
+    Args:
+        shotnum (int): Shot number on EAST
+
+    Returns:
+        mds_treedict (dict of dict): mds_treedict["east"] has the keys "tRMP", "IRMPU1", ... , "IRMPU8", "IRMPL1", ... , "IRMPL8", all the values of which are resepectively a 1D numpy array.
+        
+    Plot:
+        import matplotlib.pyplot as plt
+        fig, ax = plt.subplots(1,1)
+        for i in range(1, 8+1):
+            ax.plot( mds_treedict["east"][f"tRMP"], mds_treedict["east"][f"IRMPU{i}"], label=f"IRMPU{i}" )
+        fig.legend()
+    """
+        
+    mds_conn = MDSplus.connection.Connection(MDSplus_server_IP)
+
+    tree = "east"
+    mds_conn.openTree(tree, shotnum)
+    if mds_treedict is None:
+        mds_treedict = dict()
+    mds_treedict[tree] = dict()
+    mds_treedict[tree][f"tRMP"] = mds_conn.get(f"dim_of(\\IRMPL1)").data()
+    for i in range(1, 8 +1):
+        mds_treedict[tree][f"IRMPL{i}"] = mds_conn.get(f"\\IRMPL{i}").data()
+        mds_treedict[tree][f"IRMPU{i}"] = mds_conn.get(f"\\IRMPU{i}").data()
+    mds_conn.closeTree(tree, shotnum)
+
+    mds_conn.closeAllTrees()
+    mds_conn.disconnect()
+    
+    return mds_treedict
+    
+    
+def get_EAST_limiter(shotnum:int, mds_treedict=None):
+        
+    mds_conn = MDSplus.connection.Connection(MDSplus_server_IP)
+
+    tree = "efit_east"
+    if mds_treedict is None:
+        mds_treedict = dict()
+    mds_treedict[tree] = dict()
+    mds_conn.openTree(tree, shotnum)
+    mds_treedict[tree]["lim"] = mds_conn.get("\\lim").data()
+    mds_conn.closeTree(tree, shotnum)
+
+    mds_conn.closeAllTrees()
+    mds_conn.disconnect()
+    
+    return mds_treedict
+    
