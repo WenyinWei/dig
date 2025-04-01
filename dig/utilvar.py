@@ -263,3 +263,26 @@ def get_EAST_limiter(shotnum:int, mds_treedict=None):
     
     return mds_treedict
     
+def get_EAST_tPF_IPF(shotnum:int, mds_treedict=None):
+    
+    mds_conn = MDSplus.connection.Connection(MDSplus_server_IP)
+
+    tree = "east"
+    if mds_treedict is None:
+        mds_treedict = dict()
+    mds_treedict[tree] = dict()
+    mds_conn.openTree(tree, shotnum)
+    mds_treedict[tree]["tPF"] = mds_conn.get(f"dim_of(\\PF1P)").data()
+    for i in range(1, 8+1):
+        mds_treedict[tree][f"IPF{i}"] = mds_conn.get(f"\\PF{i}P").data()
+    mds_treedict[tree]["IPF9"] = mds_treedict[tree]["IPF7"]
+    mds_treedict[tree]["IPF10"] = mds_treedict[tree]["IPF8"]
+    for i in range(11, 14+1):
+        mds_treedict[tree][f"IPF{i}"] = mds_conn.get(f"\\PF{i-2}P").data()
+    mds_conn.closeTree(tree, shotnum)
+
+    mds_conn.closeAllTrees()
+    mds_conn.disconnect()
+    
+    return mds_treedict
+    
