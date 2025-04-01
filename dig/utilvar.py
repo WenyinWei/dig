@@ -47,7 +47,7 @@ def R_Z_psirz_to_BR_BZ(R, Z, psirz):
     return BR.T, BZ.T
         
 
-def get_EAST_EFIT_BR_BZ_BPhi(shotnum:int, tpoints:list=None):
+def get_EFIT_BR_BZ_BPhi(machine:str, shotnum:int, tpoints:list=None):
     """ Return the list of BR, BZ, Bt on the specified tpoints. If tpoints unspecified, all BR, BZ, Bt on time points given by efit would be calculated. 
     Note the first index is for R while the second one is for R, 
     BR = BRs[0]
@@ -65,6 +65,9 @@ def get_EAST_EFIT_BR_BZ_BPhi(shotnum:int, tpoints:list=None):
         BZs (list of np.ndarray): B Z component in cylindrical coordinate
         Bts (list of np.ndarray): B Phi component (toroidal field) in cylindrical coordinate
     """
+    if machine != "EAST":
+        raise NotImplementedError("Only EAST is supported now")
+    
     R0 = 1.75 # Make sure this is right for your fusion machine
     if tpoints is None:
         whether_use_time_of_efit = True
@@ -156,7 +159,7 @@ def get_EAST_EFIT_BR_BZ_BPhi(shotnum:int, tpoints:list=None):
     mds_conn.disconnect()
     return R, Z, tpoints, BRs, BZs, Bts
 
-def get_EAST_EFIT_psi(shotnum:int, tpoints:float=None):
+def get_EFIT_psi(machine:str, shotnum:int, tpoints:float=None):
     """psi distribution interpolated on the specified time points.
 
     psi = psis[0]
@@ -172,6 +175,9 @@ def get_EAST_EFIT_psi(shotnum:int, tpoints:float=None):
         Z: on which Z grid is the BR, BZ, Bt
         psis (list of np.ndarray): a list of psi[R_ind, Z_ind] distribution, the time of which are corresponding to the specified tpoints (if not specified, all is given)
     """
+    if machine != "EAST":
+        raise NotImplementedError("Only EAST is supported now")
+    
     if tpoints is None:
         whether_use_time_of_efit = True
     else:
@@ -210,7 +216,7 @@ def get_EAST_EFIT_psi(shotnum:int, tpoints:float=None):
     return R, Z, tpoints, psis
 
 
-def get_EAST_tRMP_IRMP(shotnum:int, mds_treedict=None):
+def get_tRMP_IRMP(machine:str, shotnum:int, mds_treedict=None):
     """To get EAST RMP (resonant magnetic perturbation) coil time and current sequences.
 
     Args:
@@ -226,7 +232,9 @@ def get_EAST_tRMP_IRMP(shotnum:int, mds_treedict=None):
             ax.plot( mds_treedict["east"][f"tRMP"], mds_treedict["east"][f"IRMPU{i}"], label=f"IRMPU{i}" )
         fig.legend()
     """
-        
+    if machine != "EAST":
+        raise NotImplementedError("Only EAST is supported now")
+    
     mds_conn = MDSplus.connection.Connection(MDSplus_server_IP)
 
     tree = "east"
@@ -246,8 +254,10 @@ def get_EAST_tRMP_IRMP(shotnum:int, mds_treedict=None):
     return mds_treedict
     
     
-def get_EAST_limiter(shotnum:int, mds_treedict=None):
-        
+def get_limiter(machine:str, shotnum:int, mds_treedict=None):
+    if machine != "EAST":
+        raise NotImplementedError("Only EAST is supported now")
+    
     mds_conn = MDSplus.connection.Connection(MDSplus_server_IP)
 
     tree = "efit_east"
@@ -263,8 +273,10 @@ def get_EAST_limiter(shotnum:int, mds_treedict=None):
     
     return mds_treedict
     
-def get_EAST_tPF_IPF(shotnum:int, mds_treedict=None):
-    
+def get_tPF_IPF(machine:str, shotnum:int, mds_treedict=None):
+    if machine != "EAST":
+        raise NotImplementedError("Only EAST is supported now")
+
     mds_conn = MDSplus.connection.Connection(MDSplus_server_IP)
 
     tree = "east"
