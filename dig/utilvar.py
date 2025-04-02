@@ -84,7 +84,7 @@ def get_EFIT_BR_BZ_BPhi(machine:str, shotnum:int, tpoints:list=None):
     if whether_use_time_of_efit:
         tpoints = tefit
         for i in range( len(tpoints) ):
-            psi_ = psi[:,:,i] # psi_ in [iZ, iR], psi in [iR, iZ, iT]
+            psi_ = psi[:,:,i] 
 
             # Compute the first derivative of ψ with respect to R
             ppsi_pR = np.gradient(psi_, axis=0) / dR[:, None]
