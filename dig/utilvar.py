@@ -101,6 +101,7 @@ def get_EFIT_BR_BZ_BPhi(machine:str, shotnum:int, tpoints:list=None):
             I = np.searchsorted(tefit, tpoint, ) - 1 
             tslice_1 = tefit[I] 
             tslice_2 = tefit[I+1] 
+            assert tslice_1 <= tpoint <= tslice_2, f"Time point {tpoint} is not between {tslice_1} and {tslice_2}"
             trange = tslice_2 - tslice_1
 
             # yq95 = mds_conn.get("\\Q95").data().T
@@ -143,6 +144,7 @@ def get_EFIT_BR_BZ_BPhi(machine:str, shotnum:int, tpoints:list=None):
             I = np.searchsorted(tefit, tpoint, ) - 1 
             tslice_1 = tefit[I] 
             tslice_2 = tefit[I+1] 
+            assert tslice_1 <= tpoint <= tslice_2, f"Time point {tpoint} is not between {tslice_1} and {tslice_2}"
             trange = tslice_2 - tslice_1
             PSIMAG_ = PSIMAG[I] * ((tslice_2 - tpoint) / trange) + PSIMAG[I+1] * ((tpoint - tslice_1) / trange) 
             PSIBRY_ = PSIBRY[I] * ((tslice_2 - tpoint) / trange) + PSIBRY[I+1] * ((tpoint - tslice_1) / trange) 
@@ -229,6 +231,7 @@ def get_EFIT_JR_JZ_JPhi(machine:str, shotnum:int, tpoints:list=None):
             I = np.searchsorted(tefit, tpoint, ) - 1 
             tslice_1 = tefit[I] 
             tslice_2 = tefit[I+1] 
+            assert tslice_1 <= tpoint <= tslice_2, f"Time point {tpoint} is not between {tslice_1} and {tslice_2}"
             Delta_t = tslice_2 - tslice_1
             PSIMAG_ = PSIMAG[I] * ((tslice_2 - tpoint) / Delta_t) + PSIMAG[I+1] * ((tpoint - tslice_1) / Delta_t) 
             PSIBRY_ = PSIBRY[I] * ((tslice_2 - tpoint) / Delta_t) + PSIBRY[I+1] * ((tpoint - tslice_1) / Delta_t) 
