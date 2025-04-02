@@ -67,25 +67,35 @@ def get_EFIT_BR_BZ_BPhi(machine:str, shotnum:int, tpoints:list=None):
 
 
     tefit = mds_conn.get("\\time").data().T  # s
-    psi = mds_conn.get("\\psirz").data().T
+    psi = mds_conn.get("\\psirz").data().T # poloidal flux over 2π, indexes [iR, iZ, iT]
     R = mds_conn.get("\\R").data().T
     Z = mds_conn.get("\\Z").data().T
+    FPOL = mds_conn.get('\\FPOL').data().T # Poloidal current, Fpol = R * B_phi, indexes  [ipsi, it]
+    PSIMAG = mds_conn.get('\\SSIMAG').data().T # psi at the magnetic axis, index [it]
+    PSIBRY = mds_conn.get('\\SSIBRY').data().T # psi at the boundary, index [it]
+    ZXPT1 = mds_conn.get('\\ZXPT1').data().T # Lower X point Z coordinate, index [it]
+    ZXPT2 = mds_conn.get('\\ZXPT2').data().T # Upper X point Z coordinate, index [it]
+    from numpy import gradient
+    # Compute the grid spacing
+    dR = np.gradient(R)
+    dZ = np.gradient(Z)
+
     BRs, BZs, Bts = [], [], []
     if whether_use_time_of_efit:
         tpoints = tefit
         for i in range( len(tpoints) ):
-            psi_ = psi[:,:,i].T # psi_ in [iZ, iR], psi in [iR, iZ, iT]
+            psi_ = psi[:,:,i] # psi_ in [iZ, iR], psi in [iR, iZ, iT]
 
-            from numpy import gradient
-            # Eq. (3) W Zwingmann et al Equilibrium analysis of tokamak discharges with anisotropic pressure Plasma Phys. Control. Fusion (2001) vol. 43 1441
-            dpsidR, dpsidZ = gradient(psi_.T, R, Z) # dpsidR, dpsidZ in [iR, iZ]
-            dpsidR, dpsidZ = dpsidR.T, dpsidZ.T 
-            RR = np.matmul( np.ones_like(Z)[:,None], R[None,:] )
-            BZ = -dpsidR/RR # [iZ, iR]
-            BR = dpsidZ/RR 
+            # Compute the first derivative of ψ with respect to R
+            ppsi_pR = np.gradient(psi_, axis=0) / dR[:, None]
+            # Compute the first derivative of ψ with respect to Z
+            ppsi_pZ = np.gradient(psi_, axis=1) / dZ[None, :]
 
-            BRs.append(BR.T) # BR.T in [iR, iZ]
-            BZs.append(BZ.T)
+            BZ = ppsi_pR/R[:,None]
+            BR = - ppsi_pZ/R[:,None] 
+
+            BRs.append(BR)
+            BZs.append(BZ)
     else: # does nto use time given by efit directly
         for tpoint in tpoints:
             I = np.searchsorted(tefit, tpoint, ) - 1 
@@ -95,8 +105,8 @@ def get_EFIT_BR_BZ_BPhi(machine:str, shotnum:int, tpoints:list=None):
 
             # yq95 = mds_conn.get("\\Q95").data().T
             # q95 = yq95[I]
-            psi_1 = psi[:,:,I].T
-            psi_2 = psi[:,:,I+1].T
+            psi_1 = psi[:,:,I]
+            psi_2 = psi[:,:,I+1]
 
             psi_ = psi_1 * ((tslice_2 - tpoint) / trange) + psi_2 *  ((tpoint - tslice_1) / trange) # simple linear weighting
 
@@ -107,15 +117,16 @@ def get_EFIT_BR_BZ_BPhi(machine:str, shotnum:int, tpoints:list=None):
             # Zmaxis = mds_conn.get("\\Zmaxis").data().T  # m
             # zmaxis = Zmaxis[I] 
 
-            from numpy import gradient
-            dpsidR, dpsidZ = gradient(psi_.T, R, Z)
-            dpsidR, dpsidZ = dpsidR.T, dpsidZ.T
-            RR = np.matmul( np.ones_like(Z)[:,None], R[None,:] )
-            BZ = -dpsidR/RR 
-            BR = dpsidZ/RR 
+            # Compute the first derivative of ψ with respect to R
+            ppsi_pR = np.gradient(psi_, axis=0) / dR[:, None]
+            # Compute the first derivative of ψ with respect to Z
+            ppsi_pZ = np.gradient(psi_, axis=1) / dZ[None, :]
 
-            BRs.append(BR.T)
-            BZs.append(BZ.T)
+            BZ = ppsi_pR/R[:,None]
+            BR = - ppsi_pZ/R[:,None] 
+
+            BRs.append(BR)
+            BZs.append(BZ)
 
     from scipy.interpolate import interp1d
     if whether_use_time_of_efit:
