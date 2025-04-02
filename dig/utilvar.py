@@ -49,7 +49,6 @@ def get_EFIT_BR_BZ_BPhi(machine:str, shotnum:int, tpoints:list=None):
     if machine != "EAST":
         raise NotImplementedError("Only EAST is supported now")
     
-    R0 = 1.75 # Make sure this is right for your fusion machine
     if tpoints is None:
         whether_use_time_of_efit = True
     else:
@@ -118,6 +117,35 @@ def get_EFIT_BR_BZ_BPhi(machine:str, shotnum:int, tpoints:list=None):
             BRs.append(BR.T)
             BZs.append(BZ.T)
 
+    from scipy.interpolate import interp1d
+    if whether_use_time_of_efit:
+        for it in range( len(tpoints) ):
+            psi_arr_ = np.linspace(PSIMAG[it], PSIBRY[it], num=129, endpoint=True)
+            FPOL_RZ = interp1d(psi_arr_, FPOL[:, it], bounds_error=False, fill_value=(FPOL[0,it], FPOL[-1,it]))(psi[:,:,it])
+            for iZ in range(Z.size):
+                if (Z[iZ] < ZXPT1[it]) or (Z[iZ] > ZXPT2[it]):
+                    FPOL_RZ[:,iZ] = FPOL[-1,it]
+            Bt = FPOL_RZ[:,:] / R[:,None]
+            Bts.append(Bt)
+    else: # does not use time given by efit directly
+        for tpoint in tpoints:
+            I = np.searchsorted(tefit, tpoint, ) - 1 
+            tslice_1 = tefit[I] 
+            tslice_2 = tefit[I+1] 
+            trange = tslice_2 - tslice_1
+            PSIMAG_ = PSIMAG[I] * ((tslice_2 - tpoint) / trange) + PSIMAG[I+1] * ((tpoint - tslice_1) / trange) 
+            PSIBRY_ = PSIBRY[I] * ((tslice_2 - tpoint) / trange) + PSIBRY[I+1] * ((tpoint - tslice_1) / trange) 
+            psi_arr_ = np.linspace(PSIMAG_, PSIBRY_, num=129, endpoint=True)
+            FPOL_ = FPOL[:,I] * ((tslice_2 - tpoint) / trange) + FPOL[:,I+1] * ((tpoint - tslice_1) / trange) 
+            psi_ = psi[:,:,I] * ((tslice_2 - tpoint) / trange) + psi[:,:,I+1] * ((tpoint - tslice_1) / trange)
+            FPOL_RZ = interp1d(psi_arr_, FPOL_, bounds_error=False, fill_value=(FPOL_[0], FPOL_[-1]))(psi_)
+            ZXPT1_ = ZXPT1[I] * ((tslice_2 - tpoint) / trange) + ZXPT1[I+1] * ((tpoint - tslice_1) / trange)
+            ZXPT2_ = ZXPT2[I] * ((tslice_2 - tpoint) / trange) + ZXPT2[I+1] * ((tpoint - tslice_1) / trange)
+            for iZ in range(Z.size):
+                if (Z[iZ] < ZXPT1_) or (Z[iZ] > ZXPT2_):
+                    FPOL_RZ[:,iZ] = FPOL_[-1]
+            Bt = FPOL_RZ[:,:]/ R[:,None] 
+            Bts.append(Bt)
     mds_conn.closeTree("efit_east", shotnum)
 
     #-------------------It
