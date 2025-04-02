@@ -168,6 +168,90 @@ def get_EFIT_BR_BZ_BPhi(machine:str, shotnum:int, tpoints:list=None):
     mds_conn.disconnect()
     return R, Z, tpoints, BRs, BZs, Bts
 
+def get_EFIT_JR_JZ_JPhi(machine:str, shotnum:int, tpoints:list=None):
+    """ Return the list of JR, JZ, JPhi on the specified tpoints. If tpoints unspecified, all JR, JZ, JPhi on time points given by efit would be calculated. 
+    Note the first index is for R while the second one is for R,
+    JR = JRs[0]
+    JR[ R_index, Z_index ]
+    Args:
+        shotnum (int): [description]
+        tpoints (list of float): [description]
+    Returns:
+        R: on which R grid is the JR, JZ, JPhi
+        Z: on which Z grid is the JR, JZ, JPhi
+        tpoints (list of np.ndarray): on which time points the JR,JZ,JPhi in JRs, JZs, JPhis are 
+        JRs (list of np.ndarray): J R component in cylindrical coordinate,
+        JZs (list of np.ndarray): J Z component in cylindrical coordinate
+        JPhis (list of np.ndarray): J Phi component (toroidal field) in cylindrical coordinate
+    """
+    from scipy.interpolate import interp1d
+    from dig.math import axisymmetric_laplace
+
+    R, Z, _, BRs, BZs, BPhis = get_EFIT_BR_BZ_BPhi(machine, shotnum, tpoints)
+    R, Z, _, psiRZs = get_EFIT_psi(machine, shotnum, tpoints)
+    if machine != "EAST":
+        raise NotImplementedError("Only EAST is supported now")
+    
+    mu_0 = 4 * np.pi * 1e-7 # vacuum permeability in [H/m]
+    if tpoints is None:
+        whether_use_time_of_efit = True
+    else:
+        whether_use_time_of_efit = False
+    mds_conn = MDSplus.connection.Connection(MDSplus_server_IP)
+    mds_conn.openTree("efit_east", shotnum)
+
+    tefit = mds_conn.get("\\time").data().T  # s
+    JRs, JZs, JPhis = [], [], []
+    PPRIME = mds_conn.get('\\PPRIME').data().T # P' = dP/dpsi, indexes [ipsi, it]
+    FFPRIM = mds_conn.get('\\FFPRIM').data().T # FF' = F * dF/dpsi, indexes [ipsi, it]
+    FPOL = mds_conn.get('\\FPOL').data().T # Poloidal current, Fpol = R * B_phi, indexes [ipsi, it]
+    FPRIM = FFPRIM / FPOL # F' = FF' / F, indexes [ipsi, it]
+
+    PSIBRY = mds_conn.get('\\SSIBRY').data().T # psi at the boundary, index [it]
+    PSIMAG = mds_conn.get('\\SSIMAG').data().T # psi at the magnetic axis, index [it]
+
+    ZXPT1 = mds_conn.get('\\ZXPT1').data().T # Lower X point Z coordinate
+    ZXPT2 = mds_conn.get('\\ZXPT2').data().T # Upper X point Z coordinate
+
+    if whether_use_time_of_efit:
+        tpoints = tefit
+        for it in range( len(tpoints) ):
+            psi_arr_ = np.linspace(PSIMAG[it], PSIBRY[it], num=129, endpoint=True)
+            FPRIM_interpolator = interp1d(psi_arr_, FPRIM[:,it], bounds_error=False, fill_value=(FPRIM[0,it], 0.0))
+            FPRIM_on_grid = FPRIM_interpolator(psiRZs[it][:,:])
+            for iZ in range(Z.size):
+                if (Z[iZ] < ZXPT1[it]) or (Z[iZ] > ZXPT2[it]):
+                    FPRIM_on_grid[:,iZ] = 0.0
+
+            JRs.append( (1.0 / mu_0) * BRs[it] * FPRIM_on_grid)
+            JZs.append( (1.0 / mu_0) * BZs[it] * FPRIM_on_grid)
+
+            JPhi = - (1/mu_0) * axisymmetric_laplace(psiRZs[it], R, Z) / R[:,None]
+            JPhis.append( JPhi )
+
+    else: # does not use time given by efit directly
+        for it, tpoint in enumerate(tpoints):
+            I = np.searchsorted(tefit, tpoint, ) - 1 
+            tslice_1 = tefit[I] 
+            tslice_2 = tefit[I+1] 
+            Delta_t = tslice_2 - tslice_1
+            PSIMAG_ = PSIMAG[I] * ((tslice_2 - tpoint) / Delta_t) + PSIMAG[I+1] * ((tpoint - tslice_1) / Delta_t) 
+            PSIBRY_ = PSIBRY[I] * ((tslice_2 - tpoint) / Delta_t) + PSIBRY[I+1] * ((tpoint - tslice_1) / Delta_t) 
+            psi_arr_ = np.linspace(PSIMAG_, PSIBRY_, num=129, endpoint=True)
+            FPRIM_1 = FPRIM[:,I]
+            FPRIM_2 = FPRIM[:,I+1]
+            FPRIM_ = FPRIM_1 * ((tslice_2 - tpoint) / Delta_t) + FPRIM_2 *  ((tpoint - tslice_1) / Delta_t) 
+            FPRIM_interpolator = interp1d(psi_arr_, FPRIM_, bounds_error=False, fill_value=(FPRIM_[0], 0.0))
+            FPRIM_RZ_ = FPRIM_interpolator(psiRZs[it][:,:])
+            for iZ in range(Z.size):
+                if (Z[iZ] < ZXPT1[I]) or (Z[iZ] > ZXPT2[I]):
+                    FPRIM_RZ_[:,iZ] = 0.0
+            JRs.append( (1.0 / mu_0) * BRs[it] * FPRIM_RZ_)
+            JZs.append( (1.0 / mu_0) * BZs[it] * FPRIM_RZ_)
+            JPhi = - (1/mu_0) * axisymmetric_laplace(psiRZs[it], R, Z) / R[:,None]
+            JPhis.append( JPhi )
+    return R, Z, tpoints, JRs, JZs, JPhis
+
 def get_EFIT_psi(machine:str, shotnum:int, tpoints:float=None):
     """psi distribution interpolated on the specified time points.
 
