@@ -275,12 +275,12 @@ def get_EFIT_psi(machine:str, shotnum:int, tpoints:float=None):
     mds_conn.openTree("efit_east", shotnum)
 
     tefit = mds_conn.get("\\time").data().T  # s
-    psi = mds_conn.get("\\psirz").data().T
+    psi = mds_conn.get("\\psirz").data().T # poloidal flux over 2π, indexes [iR, iZ, iT]
     psis = []
     if whether_use_time_of_efit:
         tpoints = tefit
         for i in range( len(tpoints) ):
-            psi_ = psi[:,:,i].T
+            psi_ = psi[:,:,i]
             psis.append(psi_)
     else:
         for tpoint in tpoints:
@@ -289,11 +289,11 @@ def get_EFIT_psi(machine:str, shotnum:int, tpoints:float=None):
             tslice_2 = tefit[I+1] 
             trange = tslice_2 - tslice_1
 
-            psi_1 = psi[:,:,I].T
-            psi_2 = psi[:,:,I+1].T
+            psi_1 = psi[:,:,I]
+            psi_2 = psi[:,:,I+1]
             psi_ = psi_1 * ((tslice_2 - tpoint) / trange) + psi_2 *  ((tpoint - tslice_1) / trange) # simple linear weighting
 
-            psis.append(psi_.T)
+            psis.append(psi_)
 
     R = mds_conn.get("\\R").data().T
     Z = mds_conn.get("\\Z").data().T
