@@ -148,22 +148,6 @@ def get_EFIT_BR_BZ_BPhi(machine:str, shotnum:int, tpoints:list=None):
             Bts.append(Bt)
     mds_conn.closeTree("efit_east", shotnum)
 
-    #-------------------It
-    mds_conn.openTree("east_1", shotnum)
-    try:
-        temp = mds_conn.get("\\focs4").data().T
-    except:
-        mds_conn.openTree("pcs_east", shotnum) 
-        temp = mds_conn.get("\\it").data().T
-        mds_conn.closeTree("pcs_east", shotnum) 
-    it= np.mean(temp) # Positive current means anti-clockwise direction viewed from above
-    Bt0 = it/4086.0 # 4086 is EAST-specific
-    for _ in tpoints: # considered as constant now
-        Bt = np.ones_like(BR)
-        Bt = R0 * Bt0 * Bt / R[None,:]
-        Bts.append(Bt.T)
-
-    mds_conn.closeTree("east_1", shotnum)
     mds_conn.closeAllTrees()
     mds_conn.disconnect()
     return R, Z, tpoints, BRs, BZs, Bts
