@@ -26,25 +26,6 @@ def rcentr_bcentr_to_Bt(rcentr, bcentr, R, Z):
     Bt = rcentr * bcentr * Bt / R[None,:]
     return Bt.T
 
-def R_Z_psirz_to_BR_BZ(R, Z, psirz):
-    """input R, Z are 1D mesh, psirz[iZ,iR] is psi 2D distribution
-
-    Args:
-        R (_type_): _description_
-        Z (_type_): _description_
-        psirz (_type_): _description_
-
-    Returns:
-        BR, BZ (np.ndarray): 2D mesh [iR, iZ] in matlab index style 
-    """
-    psirz_ = psirz.T
-    from numpy import gradient
-    dpsidR, dpsidZ = gradient(psirz_.T, R, Z)
-    dpsidR, dpsidZ = dpsidR.T, dpsidZ.T
-    RR = np.matmul( np.ones_like(Z)[:,None], R[None,:] )
-    BZ = -dpsidR/RR 
-    BR = dpsidZ/RR 
-    return BR.T, BZ.T
         
 
 def get_EFIT_BR_BZ_BPhi(machine:str, shotnum:int, tpoints:list=None):
