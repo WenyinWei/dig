@@ -306,6 +306,102 @@ def get_EFIT_psi(machine:str, shotnum:int, tpoints:float=None):
 
     return R, Z, tpoints, psis
 
+def get_EFIT_RZMAGIS(machine:str, shotnum:int, tpoints:list=None):
+    """Fetch the R, Z coordinates of axis data from EAST EFIT tree.
+
+    Args:
+        machine (str): Machine name
+        shotnum (int): Shot number
+        tpoints (list, optional): Time points to evaluate the data. Defaults to None, if so, the tpoints takes the EFIT time sequence.
+    """
+    if machine != "EAST":
+        raise NotImplementedError("Only EAST is supported now")
+    
+    if tpoints is None:
+        whether_use_time_of_efit = True
+    else:
+        whether_use_time_of_efit = False
+
+    mds_conn = MDSplus.connection.Connection(MDSplus_server_IP)
+    mds_conn.openTree("efit_east", shotnum)
+
+    tefit = mds_conn.get("\\time").data().T  # s
+    Rmagis = mds_conn.get("\\RMAGIS").data().T
+    Zmagis = mds_conn.get("\\ZMAGIS").data().T
+
+    Rmagis_list = []
+    Zmagis_list = []
+    if whether_use_time_of_efit:
+        tpoints = tefit
+        Rmagis_list = list(Rmagis)
+        Zmagis_list = list(Zmagis)
+    else:
+        for tpoint in tpoints:
+            I = np.searchsorted(tefit, tpoint, ) - 1
+            tslice_1 = tefit[I] 
+            tslice_2 = tefit[I+1] 
+            trange = tslice_2 - tslice_1
+
+            Rmagis_1 = Rmagis[I]
+            Rmagis_2 = Rmagis[I+1]
+            Zmagis_1 = Zmagis[I]
+            Zmagis_2 = Zmagis[I+1]
+
+            Rmagis_val = Rmagis_1 * ((tslice_2 - tpoint) / trange) + Rmagis_2 *  ((tpoint - tslice_1) / trange) # simple linear weighting
+            Zmagis_val = Zmagis_1 * ((tslice_2 - tpoint) / trange) + Zmagis_2 *  ((tpoint - tslice_1) / trange) # simple linear weighting
+
+            Rmagis_list.append(Rmagis_val)
+            Zmagis_list.append(Zmagis_val)
+    
+    mds_conn.closeAllTrees()
+    mds_conn.disconnect()
+
+    return None, None, tpoints, Rmagis_list, Zmagis_list
+
+
+def get_EFIT_qpsi(machine:str, shotnum:int, tpoints:list=None):
+    """Fetch the qpsi data from EAST EFIT tree.
+
+    Args:
+        machine (str): Machine name
+        shotnum (int): Shot number
+        tpoints (list, optional): Time points to evaluate the data. Defaults to None, if so, the tpoints takes the EFIT time sequence.
+    """
+    if machine != "EAST":
+        raise NotImplementedError("Only EAST is supported now")
+    
+    if tpoints is None:
+        whether_use_time_of_efit = True
+    else:
+        whether_use_time_of_efit = False
+
+    mds_conn = MDSplus.connection.Connection(MDSplus_server_IP)
+    mds_conn.openTree("efit_east", shotnum)
+
+    tefit = mds_conn.get("\\time").data().T  # s
+    qpsi = mds_conn.get("\\qpsi").data().T # qpsi, indexes [ipsi, iT]
+
+    qpsis = []
+    if whether_use_time_of_efit:
+        tpoints = tefit
+        for i in range( len(tpoints) ):
+            qpsi_ = qpsi[:,i]
+            qpsis.append(qpsi_)
+    else:
+        for tpoint in tpoints:
+            I = np.searchsorted(tefit, tpoint, ) - 1
+            tslice_1 = tefit[I] 
+            tslice_2 = tefit[I+1] 
+            trange = tslice_2 - tslice_1
+
+            qpsi_1 = qpsi[:,I]
+            qpsi_2 = qpsi[:,I+1]
+            qpsi_ = qpsi_1 * ((tslice_2 - tpoint) / trange) + qpsi_2 *  ((tpoint - tslice_1) / trange)
+            qpsis.append(qpsi_)
+    mds_conn.closeAllTrees()
+    mds_conn.disconnect()
+    return None, None, tpoints, qpsis
+
 
 def get_tRMP_IRMP(machine:str, shotnum:int, mds_treedict=None):
     """To get EAST RMP (resonant magnetic perturbation) coil time and current sequences.
